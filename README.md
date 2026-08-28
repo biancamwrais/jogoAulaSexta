@@ -68,3 +68,7 @@ Na metrópole, o jogador precisa gerenciar tempo, energia, sanidade mental e fin
   npm run build
   ```
 - O repositório já possui uma **GitHub Action** configurada em `.github/workflows/deploy.yml` que publica automaticamente no **GitHub Pages** a cada push na branch `main`.
+
+
+Link do jogo:
+https://jogo-aula-sexta.vercel.app/
