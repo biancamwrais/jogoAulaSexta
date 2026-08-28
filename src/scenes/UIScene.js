@@ -156,15 +156,12 @@ export class UIScene extends Phaser.Scene {
 
     // Cartão 1: Bilhete Único / Cartão de Transporte
     const card1 = this.createHotbarSlot(48, '💳', 'Bilhete');
+    
     // Cartão 2: Boletos Pendentes
-    const card2 = this.createHotbarSlot(88, '📄', 'Boletos');
-    card2.setInteractive({ useHandCursor: true });
-    card2.on('pointerdown', () => this.toggleBillsModal());
+    const card2 = this.createHotbarSlot(88, '📄', 'Boletos', () => this.toggleBillsModal());
 
     // Cartão 3: Salvar Jogo
-    const card3 = this.createHotbarSlot(128, '💾', 'Salvar');
-    card3.setInteractive({ useHandCursor: true });
-    card3.on('pointerdown', () => {
+    const card3 = this.createHotbarSlot(128, '💾', 'Salvar', () => {
       const res = SaveSystem.save(this.gameState);
       if (res.success) {
         this.showNotification({ text: 'Progresso salvo com sucesso no navegador!', type: 'success' });
@@ -174,16 +171,21 @@ export class UIScene extends Phaser.Scene {
     hotbar.add([circleBtn, hammerIcon, card1, card2, card3]);
   }
 
-  createHotbarSlot(x, iconEmoji, label) {
+  createHotbarSlot(x, iconEmoji, label, onClick = null) {
     const slot = this.add.container(x, 0);
-    const bg = this.add.graphics();
-    bg.fillStyle(0xffffff, 0.9);
-    bg.fillRoundedRect(0, 0, 32, 36, 4);
-    bg.lineStyle(1.5, 0x94a3b8, 1);
-    bg.strokeRoundedRect(0, 0, 32, 36, 4);
+    const bg = this.add.rectangle(16, 18, 32, 36, 0xffffff, 0.95);
+    bg.setStrokeStyle(1.5, 0x94a3b8);
 
-    const icon = this.add.text(16, 15, iconEmoji, { fontSize: '15px' }).setOrigin(0.5);
+    const icon = this.add.text(16, 18, iconEmoji, { fontSize: '15px' }).setOrigin(0.5);
     slot.add([bg, icon]);
+
+    if (onClick) {
+      bg.setInteractive({ useHandCursor: true });
+      bg.on('pointerover', () => bg.setFillStyle(0xe2e8f0));
+      bg.on('pointerout', () => bg.setFillStyle(0xffffff));
+      bg.on('pointerdown', onClick);
+    }
+
     return slot;
   }
 

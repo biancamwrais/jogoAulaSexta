@@ -51,7 +51,7 @@ export class TitleScene extends Phaser.Scene {
     // 4. Botão Principal: [ ▶ COMEÇAR JOGO ]
     this.createStartButton(width / 2, 275);
 
-    // 5. Botão: [ 💾 CONTINUAR JOGO ] (se houver save)
+    // 5. Botão: [ 💾 CONTINUAR JOGO ] ou [ ❓ CONTROLES ]
     if (SaveSystem.hasSave()) {
       this.createContinueButton(width / 2, 340);
     } else {
@@ -68,13 +68,11 @@ export class TitleScene extends Phaser.Scene {
 
   createSkyline(width, height) {
     const skyline = this.add.graphics();
-    // Prédios distantes escuros
     skyline.fillStyle(0x0f172a, 0.9);
     for (let x = 0; x < width; x += 55) {
       const bHeight = 120 + ((x * 37) % 110);
       skyline.fillRect(x, height - bHeight, 50, bHeight);
 
-      // Janelinhas amarelas e cianas acesas
       for (let y = height - bHeight + 15; y < height - 20; y += 18) {
         if ((x + y) % 3 === 0) {
           skyline.fillStyle(0xfef08a, 0.7);
@@ -91,11 +89,8 @@ export class TitleScene extends Phaser.Scene {
   createStartButton(x, y) {
     const btnContainer = this.add.container(x, y);
 
-    const btnBg = this.add.graphics();
-    btnBg.fillStyle(0x22c55e, 1); // Verde Stardew vivo
-    btnBg.fillRoundedRect(-160, -25, 320, 50, 10);
-    btnBg.lineStyle(3, 0xffffff, 0.9);
-    btnBg.strokeRoundedRect(-160, -25, 320, 50, 10);
+    const btnBg = this.add.rectangle(0, 0, 320, 50, 0x22c55e);
+    btnBg.setStrokeStyle(3, 0xffffff);
 
     const btnText = this.add.text(0, 0, '▶ COMEÇAR JOGO', {
       fontFamily: '"Press Start 2P", monospace',
@@ -105,28 +100,22 @@ export class TitleScene extends Phaser.Scene {
     }).setOrigin(0.5);
 
     btnContainer.add([btnBg, btnText]);
-    btnContainer.setSize(320, 50);
-    btnContainer.setInteractive({ useHandCursor: true });
 
-    btnContainer.on('pointerover', () => {
-      btnBg.clear();
-      btnBg.fillStyle(0x16a34a, 1);
-      btnBg.fillRoundedRect(-165, -27, 330, 54, 10);
-      btnBg.lineStyle(3, 0xfacc15, 1);
-      btnBg.strokeRoundedRect(-165, -27, 330, 54, 10);
+    btnBg.setInteractive({ useHandCursor: true });
+
+    btnBg.on('pointerover', () => {
+      btnBg.setFillStyle(0x16a34a);
+      btnBg.setStrokeStyle(3, 0xfacc15);
       btnContainer.setScale(1.04);
     });
 
-    btnContainer.on('pointerout', () => {
-      btnBg.clear();
-      btnBg.fillStyle(0x22c55e, 1);
-      btnBg.fillRoundedRect(-160, -25, 320, 50, 10);
-      btnBg.lineStyle(3, 0xffffff, 0.9);
-      btnBg.strokeRoundedRect(-160, -25, 320, 50, 10);
+    btnBg.on('pointerout', () => {
+      btnBg.setFillStyle(0x22c55e);
+      btnBg.setStrokeStyle(3, 0xffffff);
       btnContainer.setScale(1.0);
     });
 
-    btnContainer.on('pointerdown', () => {
+    btnBg.on('pointerdown', () => {
       this.startGame();
     });
   }
@@ -134,11 +123,8 @@ export class TitleScene extends Phaser.Scene {
   createContinueButton(x, y) {
     const btnContainer = this.add.container(x, y);
 
-    const btnBg = this.add.graphics();
-    btnBg.fillStyle(0x0284c7, 1);
-    btnBg.fillRoundedRect(-140, -20, 280, 40, 8);
-    btnBg.lineStyle(2, 0xffffff, 0.8);
-    btnBg.strokeRoundedRect(-140, -20, 280, 40, 8);
+    const btnBg = this.add.rectangle(0, 0, 280, 40, 0x0284c7);
+    btnBg.setStrokeStyle(2, 0xffffff);
 
     const btnText = this.add.text(0, 0, '💾 CONTINUAR SALVO', {
       fontFamily: '"Press Start 2P", monospace',
@@ -147,22 +133,18 @@ export class TitleScene extends Phaser.Scene {
     }).setOrigin(0.5);
 
     btnContainer.add([btnBg, btnText]);
-    btnContainer.setSize(280, 40);
-    btnContainer.setInteractive({ useHandCursor: true });
 
-    btnContainer.on('pointerover', () => btnContainer.setScale(1.03));
-    btnContainer.on('pointerout', () => btnContainer.setScale(1.0));
-    btnContainer.on('pointerdown', () => this.startGame());
+    btnBg.setInteractive({ useHandCursor: true });
+    btnBg.on('pointerover', () => btnContainer.setScale(1.03));
+    btnBg.on('pointerout', () => btnContainer.setScale(1.0));
+    btnBg.on('pointerdown', () => this.startGame());
   }
 
   createHelpButton(x, y) {
     const btnContainer = this.add.container(x, y);
 
-    const btnBg = this.add.graphics();
-    btnBg.fillStyle(0x1e293b, 0.9);
-    btnBg.fillRoundedRect(-140, -20, 280, 40, 8);
-    btnBg.lineStyle(1.5, 0x64748b, 1);
-    btnBg.strokeRoundedRect(-140, -20, 280, 40, 8);
+    const btnBg = this.add.rectangle(0, 0, 280, 40, 0x1e293b, 0.9);
+    btnBg.setStrokeStyle(1.5, 0x64748b);
 
     const btnText = this.add.text(0, 0, '❓ CONTROLES & DICAS', {
       fontFamily: '"Press Start 2P", monospace',
@@ -171,16 +153,15 @@ export class TitleScene extends Phaser.Scene {
     }).setOrigin(0.5);
 
     btnContainer.add([btnBg, btnText]);
-    btnContainer.setSize(280, 40);
-    btnContainer.setInteractive({ useHandCursor: true });
 
-    btnContainer.on('pointerover', () => {
+    btnBg.setInteractive({ useHandCursor: true });
+    btnBg.on('pointerover', () => {
       btnText.setColor('#00f2fe');
     });
-    btnContainer.on('pointerout', () => {
+    btnBg.on('pointerout', () => {
       btnText.setColor('#94a3b8');
     });
-    btnContainer.on('pointerdown', () => {
+    btnBg.on('pointerdown', () => {
       alert('🎮 CONTROLES:\n\n• WASD ou Setas: Mover a personagem\n• E ou Espaço: Interagir com lojas, portas e objetos\n• M: Metrô / Mapa\n• Canto Superior: Energia, Sanidade e Relógio\n• Pague os boletos no dia certo para evitar o despejo!');
     });
   }
