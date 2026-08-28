@@ -1,18 +1,20 @@
 import Phaser from 'phaser';
 
 export class Interactable extends Phaser.Physics.Arcade.Sprite {
-  constructor(scene, x, y, texture, prompt, onInteract) {
+  constructor(scene, x, y, texture, prompt, onInteract, radius = 42) {
     super(scene, x, y, texture);
 
     scene.add.existing(this);
-    scene.physics.add.existing(this, true); // Corpo estático
+    scene.physics.add.existing(this, true); // Corpo físico estático para colisão
 
     this.prompt = prompt;
     this.onInteract = onInteract;
+    this.interactionRadius = radius;
+  }
 
-    // Área de detecção de proximidade ligeiramente maior que o sprite
-    this.interactionZone = scene.add.zone(x, y, this.width + 24, this.height + 24);
-    scene.physics.add.existing(this.interactionZone, true);
+  isNear(player) {
+    if (!player) return false;
+    return Phaser.Math.Distance.Between(player.x, player.y, this.x, this.y) <= this.interactionRadius;
   }
 
   trigger(player) {

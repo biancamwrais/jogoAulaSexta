@@ -27,14 +27,13 @@ export class BootScene extends Phaser.Scene {
 
   create() {
     this.createPixelTextures();
-
-    // Inicia o jogo diretamente na rua principal inspirada nas referências!
-    this.scene.start('StreetScene');
-    this.scene.launch('UIScene');
-    this.scene.launch('DialogueOverlay');
+    this.scene.start('TitleScene');
   }
 
   createPixelTextures() {
+    if (this.textures.exists('cobblestone')) {
+      return;
+    }
     // 1. Pavimento de Paralelepípedos Dourados / Tijolos (Referência Imagem 1)
     const cobble = this.textures.createCanvas('cobblestone', 32, 32);
     const cCtx = cobble.context;

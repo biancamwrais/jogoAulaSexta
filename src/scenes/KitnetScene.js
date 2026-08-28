@@ -29,30 +29,14 @@ export class KitnetScene extends Phaser.Scene {
     this.player = new Player(this, spawnX, spawnY);
     this.game.registry.set('player', this.player);
 
-    // Colisões do jogador com paredes e móveis
     this.physics.add.collider(this.player, this.wallsGroup);
     this.physics.add.collider(this.player, this.furnitureGroup);
-
-    // Detecção de proximidade com interagíveis
-    this.physics.add.overlap(this.player, this.interactionZones, (player, zone) => {
-      player.setInteractable(zone.parentInteractable);
-    });
-
-    // Limpar interação quando afastar
-    this.events.on('update', () => {
-      if (this.player.currentInteractable) {
-        const zone = this.player.currentInteractable.interactionZone;
-        if (!this.physics.overlap(this.player, zone)) {
-          this.player.setInteractable(null);
-        }
-      }
-    });
 
     // Câmera estilizada
     this.cameras.main.setBounds(0, 0, width, height);
     this.cameras.main.setZoom(2);
     this.cameras.main.centerOn(width / 2, height / 2);
-    this.cameras.main.fadeIn(500, 0, 0, 0);
+    this.cameras.main.fadeIn(300, 0, 0, 0);
 
     // Ouvinte para caso o jogador desmaie
     this.gameEvents.on(EVENTS.PLAYER_EXHAUSTED, this.handleExhaustion, this);
@@ -61,6 +45,18 @@ export class KitnetScene extends Phaser.Scene {
   update(time, delta) {
     this.player.update();
     this.gameState.time.update(delta);
+
+    // Verificação de proximidade
+    let nearby = null;
+    if (this.interactables) {
+      for (const item of this.interactables) {
+        if (item.isNear(this.player)) {
+          nearby = item;
+          break;
+        }
+      }
+    }
+    this.player.setInteractable(nearby);
   }
 
   createRoomGraphics(width, height) {
@@ -105,7 +101,7 @@ export class KitnetScene extends Phaser.Scene {
 
   createInteractables() {
     this.furnitureGroup = this.physics.add.staticGroup();
-    this.interactionZones = this.physics.add.group();
+    this.interactables = [];
 
     // 1. Cama
     const bed = new Interactable(this, 100, 100, 'bed', 'Descansar na Cama', () => {
@@ -193,8 +189,7 @@ export class KitnetScene extends Phaser.Scene {
 
   registerInteractable(interactable) {
     this.furnitureGroup.add(interactable);
-    interactable.interactionZone.parentInteractable = interactable;
-    this.interactionZones.add(interactable.interactionZone);
+    this.interactables.push(interactable);
   }
 
   sleepFullNight() {

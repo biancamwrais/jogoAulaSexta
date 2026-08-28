@@ -135,6 +135,23 @@
   </style>
 </head>
 <body>
+  <div id="debug-error-log" style="display:none; position:fixed; top:20px; left:20px; right:20px; background:rgba(220,38,38,0.95); color:white; padding:18px; z-index:999999; font-family:monospace; border-radius:8px; border:2px solid #fecaca; white-space:pre-wrap; font-size:13px; box-shadow: 0 10px 30px rgba(0,0,0,0.8);"></div>
+  <script>
+    window.addEventListener('error', function(e) {
+      var el = document.getElementById('debug-error-log');
+      if (el) {
+        el.style.display = 'block';
+        el.innerText = '⚠️ ERRO NO NAVEGADOR:\n' + (e.message || e) + '\nArquivo: ' + (e.filename || 'desconhecido') + ':' + (e.lineno || '') + ':' + (e.colno || '') + (e.error && e.error.stack ? '\n\nStack:\n' + e.error.stack : '');
+      }
+    });
+    window.addEventListener('unhandledrejection', function(e) {
+      var el = document.getElementById('debug-error-log');
+      if (el) {
+        el.style.display = 'block';
+        el.innerText = '⚠️ PROMISE REJEITADA:\n' + (e.reason ? (e.reason.stack || e.reason) : e);
+      }
+    });
+  </script>
   <div id="game-wrapper">
     <div id="game-container"></div>
     <div id="ui-instructions">

@@ -28,25 +28,14 @@ export class StreetScene extends Phaser.Scene {
     this.player = new Player(this, spawnX, spawnY);
     this.registry.set('player', this.player);
 
-    this.physics.add.collider(this.player, this.collidersGroup);
+    // Colisões com os prédios e guarda-corpos
+    this.physics.add.collider(this.player, this.obstacles);
 
-    this.physics.add.overlap(this.player, this.interactionZones, (player, zone) => {
-      player.setInteractable(zone.parentInteractable);
-    });
-
-    this.events.on('update', () => {
-      if (this.player.currentInteractable) {
-        const zone = this.player.currentInteractable.interactionZone;
-        if (!this.physics.overlap(this.player, zone)) {
-          this.player.setInteractable(null);
-        }
-      }
-    });
-
-    // Câmera focada no jogador com zoom estilo Stardew Valley (2x)
+    // Câmera focada no jogador com zoom estilo Stardew Valley (1.8x)
     this.cameras.main.setBounds(0, 0, width, height);
     this.cameras.main.setZoom(1.8);
     this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
+    this.cameras.main.fadeIn(300, 0, 0, 0);
 
     this.gameEvents.on(EVENTS.PLAYER_EXHAUSTED, this.handleExhaustion, this);
   }
@@ -54,6 +43,16 @@ export class StreetScene extends Phaser.Scene {
   update(time, delta) {
     this.player.update();
     this.gameState.time.update(delta);
+
+    // Verificação contínua e robusta de proximidade com objetos interagíveis
+    let nearbyItem = null;
+    for (const item of this.interactables) {
+      if (item.isNear(this.player)) {
+        nearbyItem = item;
+        break;
+      }
+    }
+    this.player.setInteractable(nearbyItem);
   }
 
   createStreetEnvironment(width, height) {
@@ -64,39 +63,39 @@ export class StreetScene extends Phaser.Scene {
       }
     }
 
-    this.collidersGroup = this.physics.add.staticGroup();
+    this.obstacles = [];
+
+    // Função auxiliar para adicionar caixas de colisão físicas estáveis
+    const addObstacle = (x, y, w, h) => {
+      const obs = this.physics.add.staticImage(x, y, '__WHITE');
+      obs.setDisplaySize(w, h);
+      obs.refreshBody();
+      obs.setVisible(false);
+      this.obstacles.push(obs);
+      return obs;
+    };
 
     // 2. Lojas na parte superior (Threads Boutique, Salon Flamingo, Kitnets e Metrô)
     // Threads Clothing Boutique
     this.add.image(100, 75, 'threads_shop');
-    const threadsCol = this.add.zone(100, 75, 116, 70);
-    this.physics.add.existing(threadsCol, true);
-    this.collidersGroup.add(threadsCol);
+    addObstacle(100, 75, 116, 68);
 
     // Salon Flamingo
     this.add.image(230, 75, 'salon_shop');
-    const salonCol = this.add.zone(230, 75, 106, 70);
-    this.physics.add.existing(salonCol, true);
-    this.collidersGroup.add(salonCol);
+    addObstacle(230, 75, 106, 68);
 
     // Kitnets Metropolitanos (Seu Prédio)
     this.add.image(360, 75, 'apt_building');
-    const aptCol = this.add.zone(360, 75, 96, 70);
-    this.physics.add.existing(aptCol, true);
-    this.collidersGroup.add(aptCol);
+    addObstacle(360, 75, 96, 68);
 
     // Estação de Metrô
     this.add.image(500, 90, 'subway_station');
-    const subCol = this.add.zone(500, 90, 76, 50);
-    this.physics.add.existing(subCol, true);
-    this.collidersGroup.add(subCol);
+    addObstacle(500, 90, 76, 48);
 
     // 3. Guarda-corpo e Palmeiras com Luzinhas na parte inferior (Referência Imagem 1)
     for (let x = 32; x < width - 32; x += 64) {
       this.add.image(x + 32, 290, 'street_railing');
-      const railCol = this.add.zone(x + 32, 292, 64, 18);
-      this.physics.add.existing(railCol, true);
-      this.collidersGroup.add(railCol);
+      addObstacle(x + 32, 294, 64, 16);
     }
 
     // Vasos de Palmeiras Tropicais com Luzinhas penduradas
@@ -106,7 +105,7 @@ export class StreetScene extends Phaser.Scene {
   }
 
   createStreetInteractables() {
-    this.interactionZones = this.physics.add.group();
+    this.interactables = [];
 
     // 1. Porta do Threads Clothing Boutique
     const threadsDoor = new Interactable(this, 140, 115, 'door', 'Entrar na Boutique Threads', () => {
@@ -126,7 +125,7 @@ export class StreetScene extends Phaser.Scene {
         ]
       });
     });
-    this.registerInteractable(threadsDoor);
+    this.interactables.push(threadsDoor);
 
     // 2. Porta do Salon Flamingo
     const salonDoor = new Interactable(this, 248, 115, 'door', 'Entrar no Salon Flamingo', () => {
@@ -152,7 +151,7 @@ export class StreetScene extends Phaser.Scene {
         ]
       });
     });
-    this.registerInteractable(salonDoor);
+    this.interactables.push(salonDoor);
 
     // 3. Portaria do seu Prédio (Kitnet)
     const aptDoor = new Interactable(this, 375, 115, 'door', 'Entrar no seu Kitnet', () => {
@@ -161,7 +160,7 @@ export class StreetScene extends Phaser.Scene {
         this.scene.start('KitnetScene');
       });
     });
-    this.registerInteractable(aptDoor);
+    this.interactables.push(aptDoor);
 
     // 4. Catraca do Metrô
     const subwayEntrance = new Interactable(this, 500, 115, 'metro_sign', 'Descer ao Metrô (R$ 5,00)', () => {
@@ -181,12 +180,7 @@ export class StreetScene extends Phaser.Scene {
         ]
       });
     });
-    this.registerInteractable(subwayEntrance);
-  }
-
-  registerInteractable(interactable) {
-    interactable.interactionZone.parentInteractable = interactable;
-    this.interactionZones.add(interactable.interactionZone);
+    this.interactables.push(subwayEntrance);
   }
 
   buyClothes() {

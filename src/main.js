@@ -3,6 +3,7 @@ import { GAME_CONFIG } from './utils/Constants.js';
 import { eventBus, gameState } from './state/gameState.js';
 
 import { BootScene } from './scenes/BootScene.js';
+import { TitleScene } from './scenes/TitleScene.js';
 import { StreetScene } from './scenes/StreetScene.js';
 import { KitnetScene } from './scenes/KitnetScene.js';
 import { MetroScene } from './scenes/MetroScene.js';
@@ -29,6 +30,7 @@ const config = {
   },
   scene: [
     BootScene,
+    TitleScene,
     StreetScene,
     KitnetScene,
     MetroScene,
@@ -39,7 +41,6 @@ const config = {
 
 const game = new Phaser.Game(config);
 
-// Registra dependências também no registry para compatibilidade
 game.registry.set('events', eventBus);
 game.registry.set('gameState', gameState);
 
