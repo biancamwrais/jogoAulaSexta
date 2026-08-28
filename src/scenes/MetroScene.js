@@ -1,5 +1,5 @@
-import Phaser from 'phaser';
 import { EVENTS } from '../utils/Constants.js';
+import { eventBus, gameState } from '../state/gameState.js';
 
 export class MetroScene extends Phaser.Scene {
   constructor() {
@@ -7,8 +7,8 @@ export class MetroScene extends Phaser.Scene {
   }
 
   create() {
-    this.gameEvents = this.game.registry.get('events');
-    this.gameState = this.game.registry.get('gameState');
+    this.gameEvents = eventBus;
+    this.gameState = gameState;
 
     const width = 480;
     const height = 270;

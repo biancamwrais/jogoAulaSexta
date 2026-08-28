@@ -3,6 +3,7 @@ import { Player } from '../entities/Player.js';
 import { Interactable } from '../entities/Interactable.js';
 import { EVENTS } from '../utils/Constants.js';
 import { SaveSystem } from '../systems/SaveSystem.js';
+import { eventBus, gameState } from '../state/gameState.js';
 
 export class KitnetScene extends Phaser.Scene {
   constructor() {
@@ -10,8 +11,8 @@ export class KitnetScene extends Phaser.Scene {
   }
 
   create(data) {
-    this.gameEvents = this.game.registry.get('events');
-    this.gameState = this.game.registry.get('gameState');
+    this.gameEvents = eventBus;
+    this.gameState = gameState;
 
     const width = 480;
     const height = 270;

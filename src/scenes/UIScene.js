@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { EVENTS } from '../utils/Constants.js';
+import { eventBus, gameState } from '../state/gameState.js';
 import { SaveSystem } from '../systems/SaveSystem.js';
 
 export class UIScene extends Phaser.Scene {
@@ -8,10 +9,12 @@ export class UIScene extends Phaser.Scene {
   }
 
   create() {
-    this.gameEvents = this.game.registry.get('events');
-    this.gameState = this.game.registry.get('gameState');
+    this.gameEvents = eventBus;
+    this.gameState = gameState;
 
-    this.createHudBar();
+    this.createTopLeftStatusBars();
+    this.createPhoneWidget();
+    this.createBottomHotbar();
     this.createNotificationsContainer();
     this.createBillsModal();
 
@@ -21,170 +24,218 @@ export class UIScene extends Phaser.Scene {
     this.gameEvents.on(EVENTS.SHOW_NOTIFICATION, this.showNotification, this);
     this.gameEvents.on(EVENTS.GAME_OVER, this.showGameOverModal, this);
 
-    // Atualização inicial
+    // Atualização inicial com dados atuais
     this.updateTimeDisplay(this.gameState.time.getTimeData());
     this.updateStatusDisplay(this.gameState.status.getStatusData());
   }
 
-  createHudBar() {
-    const width = this.cameras.main.width;
+  createTopLeftStatusBars() {
+    // 1. Barra de Sanidade / Saúde (Coração Vermelho - Imagem 1)
+    const healthBg = this.add.graphics();
+    healthBg.fillStyle(0xffffff, 0.95);
+    healthBg.fillRoundedRect(16, 14, 150, 24, 6);
+    healthBg.lineStyle(2, 0x334155, 1);
+    healthBg.strokeRoundedRect(16, 14, 150, 24, 6);
 
-    // Fundo superior do HUD (Vidro escuro translúcido com borda neon)
-    const hudBg = this.add.graphics();
-    hudBg.fillStyle(0x0e131f, 0.9);
-    hudBg.fillRect(0, 0, width, 46);
-    hudBg.lineStyle(1, 0x00f2fe, 0.4);
-    hudBg.lineBetween(0, 46, width, 46);
+    // Ícone de Coração
+    this.add.text(22, 17, '❤️', { fontSize: '15px' });
 
-    // 1. Bloco de Tempo / Calendário
-    this.dateText = this.add.text(16, 8, 'SEG • DIA 01', {
-      fontFamily: '"Press Start 2P", monospace',
-      fontSize: '10px',
-      color: '#00f2fe'
-    });
+    // Fundo da barra interna
+    const healthInner = this.add.graphics();
+    healthInner.fillStyle(0x334155, 0.3);
+    healthInner.fillRoundedRect(46, 20, 112, 12, 4);
 
-    this.timeText = this.add.text(16, 24, '07:00 AM ☀️', {
-      fontFamily: '"Press Start 2P", monospace',
-      fontSize: '11px',
-      color: '#f9d423'
-    });
+    this.healthBar = this.add.graphics();
 
-    // 2. Bloco de Barras de Status (Energia e Estresse)
-    // Barra de Energia
-    this.add.text(200, 8, 'ENERGIA', {
-      fontFamily: '"Press Start 2P", monospace',
-      fontSize: '8px',
-      color: '#8b949e'
-    });
-    this.energyBarBg = this.add.graphics();
-    this.energyBarBg.fillStyle(0x21262d, 1);
-    this.energyBarBg.fillRect(200, 22, 130, 14);
+    // 2. Barra de Energia / Bateria (Bateria Verde - Imagem 1)
+    const energyBg = this.add.graphics();
+    energyBg.fillStyle(0xffffff, 0.95);
+    energyBg.fillRoundedRect(16, 44, 150, 24, 6);
+    energyBg.lineStyle(2, 0x334155, 1);
+    energyBg.strokeRoundedRect(16, 44, 150, 24, 6);
+
+    // Ícone de Bateria
+    this.add.text(22, 48, '🔋', { fontSize: '14px' });
+
+    // Fundo da barra interna
+    const energyInner = this.add.graphics();
+    energyInner.fillStyle(0x334155, 0.3);
+    energyInner.fillRoundedRect(46, 50, 112, 12, 4);
+
     this.energyBar = this.add.graphics();
-    this.energyText = this.add.text(265, 29, '100/100', {
-      fontFamily: '"Press Start 2P", monospace',
-      fontSize: '8px',
-      color: '#ffffff'
-    }).setOrigin(0.5);
+  }
 
-    // Barra de Estresse
-    this.add.text(360, 8, 'ESTRESSE / SANIDADE', {
+  createPhoneWidget() {
+    const width = this.cameras.main.width;
+    const px = width - 170;
+    const py = 12;
+
+    // Moldura do Celular / Widget estilo Imagem 1
+    const phoneBg = this.add.graphics();
+    phoneBg.fillStyle(0xeff6ff, 0.98);
+    phoneBg.fillRoundedRect(px, py, 155, 88, 10);
+    phoneBg.lineStyle(2, 0x94a3b8, 1);
+    phoneBg.strokeRoundedRect(px, py, 155, 88, 10);
+
+    // Topo verde do celular (barra de status)
+    const phoneTop = this.add.graphics();
+    phoneTop.fillStyle(0x4ade80, 1); // Verde lima suave
+    phoneTop.fillRoundedRect(px + 2, py + 2, 151, 16, { tl: 8, tr: 8, bl: 0, br: 0 });
+
+    this.add.text(px + 10, py + 4, 'METRÓPOLE • VER', {
       fontFamily: '"Press Start 2P", monospace',
-      fontSize: '8px',
-      color: '#8b949e'
+      fontSize: '6px',
+      color: '#064e3b'
     });
-    this.stressBarBg = this.add.graphics();
-    this.stressBarBg.fillStyle(0x21262d, 1);
-    this.stressBarBg.fillRect(360, 22, 130, 14);
-    this.stressBar = this.add.graphics();
-    this.stressText = this.add.text(425, 29, '15/100', {
-      fontFamily: '"Press Start 2P", monospace',
-      fontSize: '8px',
-      color: '#ffffff'
-    }).setOrigin(0.5);
 
-    // 3. Saldo Bancário
-    this.moneyText = this.add.text(width - 240, 14, 'R$ 350,00', {
-      fontFamily: '"Press Start 2P", monospace',
+    this.add.text(px + 130, py + 4, '📶🔋', {
+      fontSize: '8px'
+    });
+
+    // Ícone do clima (Sol / Lua)
+    this.weatherIcon = this.add.text(px + 10, py + 25, '☀️', {
+      fontSize: '26px'
+    });
+
+    // Dia do mês em destaque com sublinhado (ex: "3 qua.")
+    this.dayNumberText = this.add.text(px + 65, py + 24, '01', {
+      fontFamily: '"Space Grotesk", sans-serif',
+      fontSize: '20px',
+      fontWeight: 'bold',
+      color: '#1e293b'
+    });
+
+    const underline = this.add.graphics();
+    underline.fillStyle(0x64748b, 1);
+    underline.fillRect(px + 65, py + 46, 26, 2);
+
+    this.dayOfWeekText = this.add.text(px + 96, py + 28, 'seg.', {
+      fontFamily: '"Space Grotesk", sans-serif',
+      fontSize: '13px',
+      color: '#475569'
+    });
+
+    // Linha divisória horizontal
+    const divider = this.add.graphics();
+    divider.fillStyle(0xe2e8f0, 1);
+    divider.fillRect(px + 8, py + 52, 139, 1);
+
+    // Relógio com ícone analógico pequeno
+    this.clockText = this.add.text(px + 10, py + 58, '🕒 07:00 am', {
+      fontFamily: '"Space Grotesk", sans-serif',
       fontSize: '12px',
-      color: '#52b788'
+      fontWeight: '600',
+      color: '#334155'
     });
 
-    // 4. Botão de Boletos
-    const billsBtn = this.add.text(width - 120, 12, '📄 BOLETOS', {
-      fontFamily: '"Press Start 2P", monospace',
-      fontSize: '9px',
-      backgroundColor: '#1d3557',
-      color: '#ffffff',
-      padding: { x: 8, y: 6 }
-    }).setInteractive({ useHandCursor: true });
+    // Carteira / Dinheiro
+    this.moneyBadge = this.add.container(px + 10, py + 72);
+    this.moneyText = this.add.text(0, 0, '💰 R$ 350,00', {
+      fontFamily: '"Space Grotesk", sans-serif',
+      fontSize: '12px',
+      fontWeight: 'bold',
+      color: '#15803d'
+    });
+    this.moneyBadge.add(this.moneyText);
+  }
 
-    billsBtn.on('pointerdown', () => this.toggleBillsModal());
-    billsBtn.on('pointerover', () => billsBtn.setStyle({ backgroundColor: '#457b9d' }));
-    billsBtn.on('pointerout', () => billsBtn.setStyle({ backgroundColor: '#1d3557' }));
+  createBottomHotbar() {
+    // Barra de Ferramentas / Itens Rápidos no rodapé esquerdo (Inspirado na Imagem 1)
+    const hotbar = this.add.container(24, this.cameras.main.height - 48);
 
-    // 5. Botão de Salvar
-    const saveBtn = this.add.text(width - 40, 12, '💾', {
-      fontSize: '16px',
-      backgroundColor: '#1d3557',
-      padding: { x: 6, y: 2 }
-    }).setInteractive({ useHandCursor: true });
+    // Botão circular amarelo (Ação rápida de trânsito/trabalho)
+    const circleBtn = this.add.graphics();
+    circleBtn.fillStyle(0xfacc15, 1);
+    circleBtn.fillCircle(18, 18, 18);
+    circleBtn.lineStyle(2, 0x854d0e, 1);
+    circleBtn.strokeCircle(18, 18, 18);
 
-    saveBtn.on('pointerdown', () => {
+    const hammerIcon = this.add.text(18, 18, '🚇', {
+      fontSize: '16px'
+    }).setOrigin(0.5);
+
+    // Cartão 1: Bilhete Único / Cartão de Transporte
+    const card1 = this.createHotbarSlot(48, '💳', 'Bilhete');
+    // Cartão 2: Boletos Pendentes
+    const card2 = this.createHotbarSlot(88, '📄', 'Boletos');
+    card2.setInteractive({ useHandCursor: true });
+    card2.on('pointerdown', () => this.toggleBillsModal());
+
+    // Cartão 3: Salvar Jogo
+    const card3 = this.createHotbarSlot(128, '💾', 'Salvar');
+    card3.setInteractive({ useHandCursor: true });
+    card3.on('pointerdown', () => {
       const res = SaveSystem.save(this.gameState);
       if (res.success) {
-        this.showNotification({ text: 'Jogo salvo com sucesso no navegador!', type: 'success' });
+        this.showNotification({ text: 'Progresso salvo com sucesso no navegador!', type: 'success' });
       }
     });
+
+    hotbar.add([circleBtn, hammerIcon, card1, card2, card3]);
+  }
+
+  createHotbarSlot(x, iconEmoji, label) {
+    const slot = this.add.container(x, 0);
+    const bg = this.add.graphics();
+    bg.fillStyle(0xffffff, 0.9);
+    bg.fillRoundedRect(0, 0, 32, 36, 4);
+    bg.lineStyle(1.5, 0x94a3b8, 1);
+    bg.strokeRoundedRect(0, 0, 32, 36, 4);
+
+    const icon = this.add.text(16, 15, iconEmoji, { fontSize: '15px' }).setOrigin(0.5);
+    slot.add([bg, icon]);
+    return slot;
   }
 
   updateTimeDisplay(timeData) {
-    if (!this.dateText || !this.timeText) return;
+    if (!this.clockText) return;
 
-    const shortDay = timeData.dayOfWeek.slice(0, 3).toUpperCase();
-    const dayFormatted = String(timeData.day).padStart(2, '0');
-    this.dateText.setText(`${shortDay} • DIA ${dayFormatted} (MÊS ${timeData.month})`);
+    this.weatherIcon.setText(timeData.isDaytime ? '☀️' : '🌙');
+    this.dayNumberText.setText(String(timeData.day).padStart(2, '0'));
 
-    const icon = timeData.isDaytime ? '☀️' : '🌙';
-    this.timeText.setText(`${timeData.timeString} ${icon}`);
+    const shortDays = ['seg.', 'ter.', 'qua.', 'qui.', 'sex.', 'sáb.', 'dom.'];
+    this.dayOfWeekText.setText(shortDays[timeData.dayOfWeekIndex ?? 0]);
+
+    const period = timeData.hour < 12 ? 'am' : 'pm';
+    this.clockText.setText(`🕒 ${timeData.timeString} ${period}`);
   }
 
   updateStatusDisplay(statusData) {
-    if (!this.energyBar || !this.stressBar) return;
+    if (!this.healthBar || !this.energyBar) return;
 
-    // Atualiza Energia
-    const energyWidth = Math.max(0, (statusData.energy / statusData.maxEnergy) * 126);
+    // 1. Barra de Sanidade / Saúde (100 - Estresse)
+    const sanity = Math.max(0, 100 - statusData.stress);
+    const sanityWidth = Math.max(0, (sanity / 100) * 112);
+    this.healthBar.clear();
+    this.healthBar.fillStyle(0xef4444, 1); // Vermelho vibrante
+    this.healthBar.fillRoundedRect(46, 20, sanityWidth, 12, 3);
+
+    // 2. Barra de Energia (Verde vibrante)
+    const energyWidth = Math.max(0, (statusData.energy / statusData.maxEnergy) * 112);
     this.energyBar.clear();
-    let energyColor = 0x2ec4b6; // Verde água
-    if (statusData.energy < 50) energyColor = 0xff9f1c; // Amarelo
-    if (statusData.energy < 25) energyColor = 0xe71d36; // Vermelho crítico
-
+    let energyColor = 0x22c55e; // Verde Stardew
+    if (statusData.energy < 30) energyColor = 0xf59e0b; // Laranja alerta
     this.energyBar.fillStyle(energyColor, 1);
-    this.energyBar.fillRect(202, 24, energyWidth, 10);
-    this.energyText.setText(`${statusData.energy}/${statusData.maxEnergy}`);
-
-    // Atualiza Estresse
-    const stressWidth = Math.max(0, (statusData.stress / statusData.maxStress) * 126);
-    this.stressBar.clear();
-    let stressColor = 0x4cc9f0; // Azul suave
-    if (statusData.stress > 50) stressColor = 0xf72585; // Rosa/Roxo alerta
-    if (statusData.isBurnout) stressColor = 0xd90429; // Vermelho Burnout
-
-    this.stressBar.fillStyle(stressColor, 1);
-    this.stressBar.fillRect(362, 24, stressWidth, 10);
-    this.stressText.setText(`${statusData.stress}/${statusData.maxStress}`);
+    this.energyBar.fillRoundedRect(46, 50, energyWidth, 12, 3);
 
     // Saldo
-    this.moneyText.setText(`R$ ${statusData.money.toFixed(2).replace('.', ',')}`);
-    if (statusData.money < 100) {
-      this.moneyText.setColor('#ff4d6d');
-    } else {
-      this.moneyText.setColor('#52b788');
-    }
+    this.moneyText.setText(`💰 R$ ${statusData.money.toFixed(2).replace('.', ',')}`);
   }
 
   createNotificationsContainer() {
-    this.notificationBox = this.add.container(this.cameras.main.width / 2, 85);
+    this.notificationBox = this.add.container(this.cameras.main.width / 2, 60);
     this.notificationBox.setAlpha(0);
+    this.notificationBox.setDepth(300);
   }
 
   showNotification({ text, type = 'info' }) {
     this.notificationBox.removeAll(true);
 
-    const colors = {
-      info: { bg: 0x1d3557, border: 0x457b9d },
-      success: { bg: 0x134e4a, border: 0x2dd4bf },
-      warning: { bg: 0x78350f, border: 0xfbbf24 },
-      danger: { bg: 0x7f1d1d, border: 0xf87171 },
-      alert: { bg: 0x581c87, border: 0xc084fc }
-    };
-
-    const palette = colors[type] || colors.info;
-
     const bg = this.add.graphics();
-    bg.fillStyle(palette.bg, 0.95);
-    bg.fillRoundedRect(-240, -18, 480, 36, 6);
-    bg.lineStyle(1, palette.border, 1);
-    bg.strokeRoundedRect(-240, -18, 480, 36, 6);
+    bg.fillStyle(0x0f172a, 0.95);
+    bg.fillRoundedRect(-220, -18, 440, 36, 8);
+    bg.lineStyle(2, 0x38bdf8, 1);
+    bg.strokeRoundedRect(-220, -18, 440, 36, 8);
 
     const label = this.add.text(0, 0, text, {
       fontFamily: '"Space Grotesk", sans-serif',
@@ -192,7 +243,7 @@ export class UIScene extends Phaser.Scene {
       fontWeight: 'bold',
       color: '#ffffff',
       align: 'center',
-      wordWrap: { width: 460 }
+      wordWrap: { width: 420 }
     }).setOrigin(0.5);
 
     this.notificationBox.add([bg, label]);
@@ -200,12 +251,12 @@ export class UIScene extends Phaser.Scene {
     this.tweens.add({
       targets: this.notificationBox,
       alpha: 1,
-      y: 75,
+      y: 50,
       duration: 250,
-      hold: 3500,
+      hold: 3000,
       yoyo: true,
       onComplete: () => {
-        this.notificationBox.setY(85);
+        this.notificationBox.setY(60);
       }
     });
   }
@@ -213,80 +264,76 @@ export class UIScene extends Phaser.Scene {
   createBillsModal() {
     this.billsModal = this.add.container(this.cameras.main.width / 2, this.cameras.main.height / 2);
     this.billsModal.setVisible(false);
-    this.billsModal.setDepth(200);
+    this.billsModal.setDepth(500);
   }
 
   toggleBillsModal() {
     const isVisible = !this.billsModal.visible;
     this.billsModal.setVisible(isVisible);
-
-    if (isVisible) {
-      this.refreshBillsModal();
-    }
+    if (isVisible) this.refreshBillsModal();
   }
 
   refreshBillsModal() {
     this.billsModal.removeAll(true);
 
     const bg = this.add.graphics();
-    bg.fillStyle(0x0a0e17, 0.95);
-    bg.fillRoundedRect(-220, -150, 440, 300, 10);
-    bg.lineStyle(2, 0x00f2fe, 0.8);
-    bg.strokeRoundedRect(-220, -150, 440, 300, 10);
+    bg.fillStyle(0x0f172a, 0.96);
+    bg.fillRoundedRect(-200, -140, 400, 280, 10);
+    bg.lineStyle(2, 0x38bdf8, 1);
+    bg.strokeRoundedRect(-200, -140, 400, 280, 10);
 
-    const title = this.add.text(0, -120, 'GERENCIADOR DE BOLETOS', {
+    const title = this.add.text(0, -110, 'CONTAS E BOLETOS', {
       fontFamily: '"Press Start 2P", monospace',
       fontSize: '11px',
-      color: '#00f2fe'
+      color: '#38bdf8'
     }).setOrigin(0.5);
 
-    const closeBtn = this.add.text(190, -135, '✕', {
+    const closeBtn = this.add.text(175, -125, '✕', {
       fontSize: '18px',
-      color: '#ff4d6d'
+      color: '#f43f5e'
     }).setInteractive({ useHandCursor: true });
     closeBtn.on('pointerdown', () => this.toggleBillsModal());
 
     this.billsModal.add([bg, title, closeBtn]);
 
     const summary = this.gameState.economy.getBillsSummary();
-    let yOffset = -70;
+    let yOffset = -60;
 
     summary.forEach(bill => {
-      const isPaid = bill.paid;
-      const cardBg = this.add.graphics();
-      cardBg.fillStyle(isPaid ? 0x16232e : 0x221a24, 0.8);
-      cardBg.fillRoundedRect(-200, yOffset, 400, 50, 6);
+      const card = this.add.graphics();
+      card.fillStyle(bill.paid ? 0x1e293b : 0x334155, 0.9);
+      card.fillRoundedRect(-180, yOffset, 360, 48, 6);
 
-      const billText = this.add.text(-185, yOffset + 10, `${bill.name} (Vence Dia ${bill.dueDay})`, {
+      const name = this.add.text(-165, yOffset + 10, `${bill.name} (Dia ${bill.dueDay})`, {
         fontFamily: '"Space Grotesk", sans-serif',
         fontSize: '13px',
         fontWeight: 'bold',
-        color: '#e6edf3'
+        color: '#ffffff'
       });
 
-      const valueText = this.add.text(-185, yOffset + 28, `Valor: R$ ${bill.amount.toFixed(2)}`, {
+      const val = this.add.text(-165, yOffset + 28, `R$ ${bill.amount.toFixed(2)}`, {
         fontFamily: '"Space Grotesk", sans-serif',
         fontSize: '12px',
-        color: '#f9d423'
+        color: '#facc15'
       });
 
-      let actionElement;
-      if (isPaid) {
-        actionElement = this.add.text(140, yOffset + 16, 'PAGO ✅', {
+      let btn;
+      if (bill.paid) {
+        btn = this.add.text(130, yOffset + 16, 'PAGO ✅', {
           fontFamily: '"Press Start 2P", monospace',
-          fontSize: '9px',
-          color: '#2ec4b6'
+          fontSize: '8px',
+          color: '#4ade80'
         }).setOrigin(0.5);
       } else {
-        actionElement = this.add.text(140, yOffset + 16, 'PAGAR', {
+        btn = this.add.text(130, yOffset + 16, 'PAGAR', {
           fontFamily: '"Press Start 2P", monospace',
           fontSize: '9px',
-          backgroundColor: '#00f2fe',
-          color: '#000000',
-          padding: { x: 8, y: 5 }
+          backgroundColor: '#38bdf8',
+          color: '#0f172a',
+          padding: { x: 6, y: 4 }
         }).setOrigin(0.5).setInteractive({ useHandCursor: true });
 
-        actionElement.on('pointerdown', () => {
+        btn.on('pointerdown', () => {
           const res = this.gameState.economy.payBill(bill.id);
           if (res.success) {
             this.refreshBillsModal();
@@ -296,41 +343,41 @@ export class UIScene extends Phaser.Scene {
         });
       }
 
-      this.billsModal.add([cardBg, billText, valueText, actionElement]);
-      yOffset += 60;
+      this.billsModal.add([card, name, val, btn]);
+      yOffset += 56;
     });
   }
 
   showGameOverModal({ reason, message }) {
     const modal = this.add.container(this.cameras.main.width / 2, this.cameras.main.height / 2);
-    modal.setDepth(300);
+    modal.setDepth(600);
 
     const bg = this.add.graphics();
-    bg.fillStyle(0x05070a, 0.98);
-    bg.fillRect(-300, -180, 600, 360);
-    bg.lineStyle(2, 0xff007f, 1);
-    bg.strokeRect(-300, -180, 600, 360);
+    bg.fillStyle(0x020617, 0.98);
+    bg.fillRect(-280, -160, 560, 320);
+    bg.lineStyle(2, 0xf43f5e, 1);
+    bg.strokeRect(-280, -160, 560, 320);
 
-    const title = this.add.text(0, -110, 'FIM DA LINHA NA METRÓPOLE', {
+    const title = this.add.text(0, -90, 'FIM DA ROTINA URBANA', {
       fontFamily: '"Press Start 2P", monospace',
       fontSize: '14px',
-      color: '#ff007f'
+      color: '#f43f5e'
     }).setOrigin(0.5);
 
-    const desc = this.add.text(0, -30, message || 'Você não suportou a pressão da rotina urbana.', {
+    const desc = this.add.text(0, -20, message, {
       fontFamily: '"Space Grotesk", sans-serif',
       fontSize: '15px',
-      color: '#e6edf3',
+      color: '#ffffff',
       align: 'center',
-      wordWrap: { width: 520 }
+      wordWrap: { width: 480 }
     }).setOrigin(0.5);
 
-    const restartBtn = this.add.text(0, 80, 'TENTAR NOVAMENTE', {
+    const restartBtn = this.add.text(0, 70, 'RECOMEÇAR', {
       fontFamily: '"Press Start 2P", monospace',
       fontSize: '11px',
-      backgroundColor: '#00f2fe',
-      color: '#000000',
-      padding: { x: 14, y: 10 }
+      backgroundColor: '#38bdf8',
+      color: '#0f172a',
+      padding: { x: 12, y: 8 }
     }).setOrigin(0.5).setInteractive({ useHandCursor: true });
 
     restartBtn.on('pointerdown', () => {

@@ -1,5 +1,5 @@
-import Phaser from 'phaser';
 import { EVENTS } from '../utils/Constants.js';
+import { eventBus } from '../state/gameState.js';
 
 export class DialogueOverlay extends Phaser.Scene {
   constructor() {
@@ -7,7 +7,7 @@ export class DialogueOverlay extends Phaser.Scene {
   }
 
   create() {
-    this.gameEvents = this.game.registry.get('events');
+    this.gameEvents = eventBus;
     const width = this.cameras.main.width;
     const height = this.cameras.main.height;
 
